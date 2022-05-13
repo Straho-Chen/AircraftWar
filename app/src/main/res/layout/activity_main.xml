@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+xmlns:app="http://schemas.android.com/apk/res-auto"
+xmlns:tools="http://schemas.android.com/tools"
+android:layout_width="match_parent"
+android:layout_height="match_parent"
+android:rotationX="2"
+tools:context="application.MainActivity">
+
+    <Button
+        android:id="@+id/hard"
+        android:layout_width="185dp"
+        android:layout_height="82dp"
+        android:layout_marginStart="113dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="113dp"
+        android:layout_marginBottom="84dp"
+        android:text="困难模式"
+        android:textSize="20sp"
+        app:layout_constraintBottom_toTopOf="@+id/musicStart"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/medium" />
+
+    <Button
+        android:id="@+id/medium"
+        android:layout_width="185dp"
+        android:layout_height="82dp"
+        android:layout_marginStart="113dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="113dp"
+        android:layout_marginBottom="16dp"
+        android:text="普通模式"
+        android:textSize="20sp"
+        app:layout_constraintBottom_toTopOf="@+id/hard"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/easy" />
+
+    <Button
+        android:id="@+id/easy"
+        android:layout_width="185dp"
+        android:layout_height="82dp"
+        android:layout_marginStart="113dp"
+        android:layout_marginTop="85dp"
+        android:layout_marginEnd="113dp"
+        android:layout_marginBottom="16dp"
+        android:text="简单模式"
+        android:textSize="20sp"
+        app:layout_constraintBottom_toTopOf="@+id/medium"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <Switch
+        android:id="@+id/musicStart"
+        android:layout_width="104dp"
+        android:layout_height="46dp"
+        android:layout_marginStart="153dp"
+        android:layout_marginTop="17dp"
+        android:layout_marginEnd="154dp"
+        android:layout_marginBottom="44dp"
+        android:text="音效"
+        android:textSize="20sp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/hard" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
