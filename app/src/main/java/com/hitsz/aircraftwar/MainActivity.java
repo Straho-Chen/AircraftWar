@@ -10,10 +10,13 @@ import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.Switch;
 
+import com.hitsz.aircraftwar.UI.EasyGameView;
+import com.hitsz.aircraftwar.UI.HardGameView;
+import com.hitsz.aircraftwar.UI.MediumGameView;
+
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
     public static int WINDOW_WIDTH;
     public static int WINDOW_HEIGHT;
-    public static String difficulty;
     public static boolean bgmStart;
 
     Button easyButton;
@@ -22,9 +25,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     Switch musicSwitch;
 
-    Intent easy, medium, hard;
+    private EasyGameView easyGameView;
+    private MediumGameView mediumGameView;
+    private HardGameView hardGameView;
 
-
+    public static ImageManager imageManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -49,6 +54,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 bgmStart = isChecked;
             }
         });
+
+        imageManager = new ImageManager(this);
     }
 
     public void getScreenHW() {
@@ -62,19 +69,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public void onClick(View view) {
         switch (view.getId()) {
             case R.id.easy:
-                easy = new Intent(MainActivity.this, GameActivity.class);
-                difficulty = "easy";
-                startActivity(easy);
+                easyGameView = new EasyGameView(this, bgmStart);
+                setContentView(easyGameView);
                 break;
             case R.id.medium:
-                medium = new Intent(MainActivity.this, GameActivity.class);
-                difficulty = "medium";
-                startActivity(medium);
+                mediumGameView = new MediumGameView(this, bgmStart);
+                setContentView(mediumGameView);
                 break;
             case R.id.hard:
-                hard = new Intent(MainActivity.this, GameActivity.class);
-                difficulty = "hard";
-                startActivity(hard);
+                hardGameView = new HardGameView(this, bgmStart);
+                setContentView(hardGameView);
                 break;
             default:
                 break;

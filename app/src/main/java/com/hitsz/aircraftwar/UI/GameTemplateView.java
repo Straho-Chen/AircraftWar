@@ -52,12 +52,6 @@ public abstract class GameTemplateView extends SurfaceView implements SurfaceHol
     int backGroundTop = 0;
 
     /**
-     * Scheduled 线程池，用于任务调度
-     */
-//    final ScheduledExecutorService executorService = new ScheduledThreadPoolExecutor(1,
-//            new BasicThreadFactory.Builder().namingPattern("game-action-%d").daemon(true).build());
-
-    /**
      * 时间间隔(ms)，控制刷新频率
      */
     int timeInterval = 40;
@@ -97,19 +91,23 @@ public abstract class GameTemplateView extends SurfaceView implements SurfaceHol
     double eliteEnemyProbability = 0.2;
     double ratio = 1;
 
-    boolean mbLoop = false;
     private SurfaceHolder mSurfaceHolder;
     private Paint mPaint;
     private Canvas canvas;
+    private Thread thread;
 
     public GameTemplateView(Context context, boolean bgmStart) {
         super(context);
-        mbLoop = true;
         mPaint = new Paint();
         mSurfaceHolder = this.getHolder();
         mSurfaceHolder.addCallback(this);
         this.setFocusable(true);
         this.bgmStart = bgmStart;
+        if (bgmStart) {
+            bgmThread = new MusicService("bgm", 2);
+            bgmThread.playMusic();
+        }
+        thread = new Thread(this);
     }
 
     @Override
@@ -124,79 +122,6 @@ public abstract class GameTemplateView extends SurfaceView implements SurfaceHol
             heroAircraft.setLocation(x, y);
         }
         return true;
-    }
-
-    /**
-     * 游戏启动入口，执行游戏逻辑
-     */
-    @RequiresApi(api = Build.VERSION_CODES.N)
-    public final void action() {
-        if (bgmStart) {
-            bgmThread = new MusicService("bgm", 2);
-            bgmThread.playMusic();
-        }
-
-        // 定时任务：绘制、对象产生、碰撞判定、击毁及结束判定
-//        Runnable task = () -> {
-
-            time += timeInterval;
-            enemyCycleTime += 1;
-            heroCycleTime += 1;
-
-            // 周期性执行（控制频率）
-            if (enemyTimeCountAndNewCycleJudge()) {
-                this.createEnemy();
-                enemyShootAction();
-            }
-            if (heroTimeCountAndNewCycleJudge()) {
-                heroShootAction();
-            }
-
-            // 子弹移动
-            this.bulletsMoveAction();
-
-            // 飞机移动
-            this.aircraftsMoveAction();
-
-            //道具移动
-            this.propSupplyMoveAction();
-
-            // 撞击检测
-            this.crashCheckAction();
-
-            // 后处理
-            this.postProcessAction();
-
-            //增加难度
-            this.difficultyIncrease();
-
-            this.draw();
-
-            // 游戏结束检查
-            if (heroAircraft.getHp() <= 0) {
-//                executorService.shutdown();
-                mbLoop = false;
-                if (bgmStart) {
-                    gameOverBgmThread = new MusicService("game_over", 1);
-                    gameOverBgmThread.playMusic();
-                    bgmThread.stopMusic();
-                    if (bossExit) {
-                        bossBgmThread.stopMusic();
-                    }
-                }
-                gameOverFlag = true;
-                //跳转
-
-                System.out.println("Game Over!");
-            }
-//        };
-
-        /**
-         * 以固定延迟时间进行执行
-         * 本次任务执行完成后，需要延迟设定的延迟时间，才会执行新的任务
-         */
-//        executorService.scheduleWithFixedDelay(task, timeInterval, timeInterval, TimeUnit.MILLISECONDS);
-
     }
 
     //***********************
@@ -480,7 +405,7 @@ public abstract class GameTemplateView extends SurfaceView implements SurfaceHol
      *
      */
     public final void draw() {
-        if(mSurfaceHolder == null || canvas == null){
+        if(mSurfaceHolder == null){
             return;
         }
         canvas = mSurfaceHolder.lockCanvas();
@@ -505,6 +430,7 @@ public abstract class GameTemplateView extends SurfaceView implements SurfaceHol
 
         //绘制得分和生命值
         paintScoreAndLife(canvas);
+        canvas.save();
 
         mSurfaceHolder.unlockCanvasAndPost(canvas);
     }
@@ -525,7 +451,8 @@ public abstract class GameTemplateView extends SurfaceView implements SurfaceHol
     public final void paintScoreAndLife(Canvas canvas) {
         int x = 10;
         int y = 25;
-        canvas.drawColor(Color.red(16711680));
+        mPaint.setTextSize(40);
+        mPaint.setColor(Color.rgb(235, 161, 1));
         canvas.drawText("SCORE:" + this.score, x, y, mPaint);
         y = y + 20;
         canvas.drawText("LIFE:" + this.heroAircraft.getHp(), x, y, mPaint);
@@ -533,7 +460,9 @@ public abstract class GameTemplateView extends SurfaceView implements SurfaceHol
 
     @Override
     public void surfaceCreated(@NonNull SurfaceHolder surfaceHolder) {
-        new Thread(this).start();
+        if (!gameOverFlag) {
+            thread.start();
+        }
     }
 
     @Override
@@ -542,15 +471,63 @@ public abstract class GameTemplateView extends SurfaceView implements SurfaceHol
 
     @Override
     public void surfaceDestroyed(@NonNull SurfaceHolder surfaceHolder) {
-        mbLoop = false;
+        gameOverFlag = true;
     }
 
     @RequiresApi(api = Build.VERSION_CODES.N)
     @Override
     public void run() {
-        while (mbLoop) {
+        while (!gameOverFlag) {
             synchronized (mSurfaceHolder){
-                action();
+                time += timeInterval;
+                enemyCycleTime += 1;
+                heroCycleTime += 1;
+
+                // 周期性执行（控制频率）
+                if (enemyTimeCountAndNewCycleJudge()) {
+                    this.createEnemy();
+                    enemyShootAction();
+                }
+                if (heroTimeCountAndNewCycleJudge()) {
+                    heroShootAction();
+                }
+
+                // 子弹移动
+                this.bulletsMoveAction();
+
+                // 飞机移动
+                this.aircraftsMoveAction();
+
+                //道具移动
+                this.propSupplyMoveAction();
+
+                // 撞击检测
+                this.crashCheckAction();
+
+                // 后处理
+                this.postProcessAction();
+
+                //增加难度
+                this.difficultyIncrease();
+
+                //绘制图片
+                this.draw();
+
+                // 游戏结束检查
+                if (heroAircraft.getHp() <= 0) {
+                    if (bgmStart) {
+                        gameOverBgmThread = new MusicService("game_over", 1);
+                        gameOverBgmThread.playMusic();
+                        bgmThread.stopMusic();
+                        if (bossExit) {
+                            bossBgmThread.stopMusic();
+                        }
+                    }
+                    gameOverFlag = true;
+                    //跳转
+
+                    System.out.println("Game Over!");
+                }
             }
             try {
                 Thread.sleep(timeInterval);
