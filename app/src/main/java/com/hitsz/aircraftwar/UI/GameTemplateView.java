@@ -1,10 +1,22 @@
-package com.hitsz.aircraftwar;
+package com.hitsz.aircraftwar.UI;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
+import android.os.Build;
+import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
+
+import com.google.android.material.bottomappbar.BottomAppBarTopEdgeTreatment;
+import com.hitsz.aircraftwar.ImageManager;
+import com.hitsz.aircraftwar.MainActivity;
+import com.hitsz.aircraftwar.MusicService;
 import com.hitsz.aircraftwar.aircraft.AbstractAircraft;
 import com.hitsz.aircraftwar.aircraft.Boss;
 import com.hitsz.aircraftwar.aircraft.EliteEnemy;
@@ -31,18 +43,19 @@ import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
+import java.util.TreeMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-public abstract class GameTemplate extends SurfaceView implements SurfaceHolder.Callback, Runnable {
+public abstract class GameTemplateView extends SurfaceView implements SurfaceHolder.Callback, Runnable {
     int backGroundTop = 0;
 
     /**
      * Scheduled 线程池，用于任务调度
      */
-    final ScheduledExecutorService executorService = new ScheduledThreadPoolExecutor(1,
-            new BasicThreadFactory.Builder().namingPattern("game-action-%d").daemon(true).build());
+//    final ScheduledExecutorService executorService = new ScheduledThreadPoolExecutor(1,
+//            new BasicThreadFactory.Builder().namingPattern("game-action-%d").daemon(true).build());
 
     /**
      * 时间间隔(ms)，控制刷新频率
@@ -84,15 +97,39 @@ public abstract class GameTemplate extends SurfaceView implements SurfaceHolder.
     double eliteEnemyProbability = 0.2;
     double ratio = 1;
 
-    public GameTemplate(Context context, boolean bgmStart) {
+    boolean mbLoop = false;
+    private SurfaceHolder mSurfaceHolder;
+    private Paint mPaint;
+    private Canvas canvas;
+
+    public GameTemplateView(Context context, boolean bgmStart) {
         super(context);
+        mbLoop = true;
+        mPaint = new Paint();
+        mSurfaceHolder = this.getHolder();
+        mSurfaceHolder.addCallback(this);
+        this.setFocusable(true);
         this.bgmStart = bgmStart;
-        new HeroController(this, heroAircraft);
+    }
+
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        if (event.getAction() == MotionEvent.ACTION_DOWN) {
+            double x = event.getX();
+            double y = event.getY();
+            if (x < 0 || x > MainActivity.WINDOW_WIDTH || y < 0 || y > MainActivity.WINDOW_HEIGHT) {
+                // 防止出界
+                return false;
+            }
+            heroAircraft.setLocation(x, y);
+        }
+        return true;
     }
 
     /**
      * 游戏启动入口，执行游戏逻辑
      */
+    @RequiresApi(api = Build.VERSION_CODES.N)
     public final void action() {
         if (bgmStart) {
             bgmThread = new MusicService("bgm", 2);
@@ -100,7 +137,7 @@ public abstract class GameTemplate extends SurfaceView implements SurfaceHolder.
         }
 
         // 定时任务：绘制、对象产生、碰撞判定、击毁及结束判定
-        Runnable task = () -> {
+//        Runnable task = () -> {
 
             time += timeInterval;
             enemyCycleTime += 1;
@@ -133,34 +170,32 @@ public abstract class GameTemplate extends SurfaceView implements SurfaceHolder.
             //增加难度
             this.difficultyIncrease();
 
-            //每个时刻重绘界面
-//            this.repaint();
+            this.draw();
 
             // 游戏结束检查
             if (heroAircraft.getHp() <= 0) {
-                synchronized (Main.object) {
-                    // 游戏结束
-                    executorService.shutdown();
-                    if (bgmStart) {
-                        gameOverBgmThread = new MusicService("game_over", 1);
-                        gameOverBgmThread.start();
-                        bgmThread.stopMusic();
-                        if (bossExit) {
-                            bossBgmThread.stopMusic();
-                        }
+//                executorService.shutdown();
+                mbLoop = false;
+                if (bgmStart) {
+                    gameOverBgmThread = new MusicService("game_over", 1);
+                    gameOverBgmThread.playMusic();
+                    bgmThread.stopMusic();
+                    if (bossExit) {
+                        bossBgmThread.stopMusic();
                     }
-                    gameOverFlag = true;
-                    Main.object.notify();
-                    System.out.println("Game Over!");
                 }
+                gameOverFlag = true;
+                //跳转
+
+                System.out.println("Game Over!");
             }
-        };
+//        };
 
         /**
          * 以固定延迟时间进行执行
          * 本次任务执行完成后，需要延迟设定的延迟时间，才会执行新的任务
          */
-        executorService.scheduleWithFixedDelay(task, timeInterval, timeInterval, TimeUnit.MILLISECONDS);
+//        executorService.scheduleWithFixedDelay(task, timeInterval, timeInterval, TimeUnit.MILLISECONDS);
 
     }
 
@@ -426,6 +461,7 @@ public abstract class GameTemplate extends SurfaceView implements SurfaceHolder.
      * <p>
      * 无效的原因可能是撞击或者飞出边界
      */
+    @RequiresApi(api = Build.VERSION_CODES.N)
     public final void postProcessAction() {
         enemyBullets.removeIf(AbstractFlyingObject::notValid);
         heroBullets.removeIf(AbstractFlyingObject::notValid);
@@ -439,18 +475,18 @@ public abstract class GameTemplate extends SurfaceView implements SurfaceHolder.
     //***********************
 
     /**
-     * 重写paint方法
-     * 通过重复调用paint方法，实现游戏动画
+     * 重写draw方法
+     * 通过重复调用draw方法，实现游戏动画
      *
-     * @param  g
      */
-    @Override
-    public final void paint(Graphics g) {
-        super.paint(g);
-
+    public final void draw() {
+        if(mSurfaceHolder == null || canvas == null){
+            return;
+        }
+        canvas = mSurfaceHolder.lockCanvas();
         // 绘制背景,图片滚动
-        g.drawImage(ImageManager.BACKGROUND_IMAGE, 0, this.backGroundTop - MainActivity.WINDOW_HEIGHT, null);
-        g.drawImage(ImageManager.BACKGROUND_IMAGE, 0, this.backGroundTop, null);
+        canvas.drawBitmap(ImageManager.BACKGROUND_IMAGE, 0, this.backGroundTop-MainActivity.WINDOW_HEIGHT, mPaint);
+        canvas.drawBitmap(ImageManager.BACKGROUND_IMAGE, 0, this.backGroundTop, mPaint);
         this.backGroundTop += 1;
         if (this.backGroundTop == MainActivity.WINDOW_HEIGHT) {
             this.backGroundTop = 0;
@@ -458,21 +494,22 @@ public abstract class GameTemplate extends SurfaceView implements SurfaceHolder.
 
         // 先绘制子弹，后绘制飞机
         // 这样子弹显示在飞机的下层
-        paintImageWithPositionRevised(g, enemyBullets);
-        paintImageWithPositionRevised(g, heroBullets);
+        paintImageWithPositionRevised(canvas, enemyBullets);
+        paintImageWithPositionRevised(canvas, heroBullets);
 
-        paintImageWithPositionRevised(g, enemyAircrafts);
-        paintImageWithPositionRevised(g, propSupply);
+        paintImageWithPositionRevised(canvas, enemyAircrafts);
+        paintImageWithPositionRevised(canvas, propSupply);
 
-        g.drawImage(ImageManager.HERO_IMAGE, heroAircraft.getLocationX() - ImageManager.HERO_IMAGE.getWidth() / 2,
-                heroAircraft.getLocationY() - ImageManager.HERO_IMAGE.getHeight() / 2, null);
+        canvas.drawBitmap(ImageManager.HERO_IMAGE, heroAircraft.getLocationX() - ImageManager.HERO_IMAGE.getWidth() / 2,
+                heroAircraft.getLocationY() - ImageManager.HERO_IMAGE.getHeight() / 2, mPaint);
 
         //绘制得分和生命值
-        paintScoreAndLife(g);
+        paintScoreAndLife(canvas);
 
+        mSurfaceHolder.unlockCanvasAndPost(canvas);
     }
 
-    public final void paintImageWithPositionRevised(Graphics g, List<? extends AbstractFlyingObject> objects) {
+    public final void paintImageWithPositionRevised(Canvas canvas, List<? extends AbstractFlyingObject> objects) {
         if (objects.size() == 0) {
             return;
         }
@@ -480,19 +517,46 @@ public abstract class GameTemplate extends SurfaceView implements SurfaceHolder.
         for (AbstractFlyingObject object : objects) {
             Bitmap image = object.getImage();
             assert image != null : objects.getClass().getName() + " has no image! ";
-            g.drawImage(image, object.getLocationX() - image.getWidth() / 2,
-                    object.getLocationY() - image.getHeight() / 2, null);
+            canvas.drawBitmap(image, object.getLocationX() - image.getWidth() / 2,
+                    object.getLocationY() - image.getHeight() / 2, mPaint);
         }
     }
 
-    public final void paintScoreAndLife(Graphics g) {
+    public final void paintScoreAndLife(Canvas canvas) {
         int x = 10;
         int y = 25;
-        g.setColor(new Color(16711680));
-        g.setFont(new Font("SansSerif", Font.BOLD, 22));
-        g.drawString("SCORE:" + this.score, x, y);
+        canvas.drawColor(Color.red(16711680));
+        canvas.drawText("SCORE:" + this.score, x, y, mPaint);
         y = y + 20;
-        g.drawString("LIFE:" + this.heroAircraft.getHp(), x, y);
+        canvas.drawText("LIFE:" + this.heroAircraft.getHp(), x, y, mPaint);
     }
 
+    @Override
+    public void surfaceCreated(@NonNull SurfaceHolder surfaceHolder) {
+        new Thread(this).start();
+    }
+
+    @Override
+    public void surfaceChanged(@NonNull SurfaceHolder surfaceHolder, int format, int width, int height) {
+    }
+
+    @Override
+    public void surfaceDestroyed(@NonNull SurfaceHolder surfaceHolder) {
+        mbLoop = false;
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.N)
+    @Override
+    public void run() {
+        while (mbLoop) {
+            synchronized (mSurfaceHolder){
+                action();
+            }
+            try {
+                Thread.sleep(timeInterval);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    }
 }

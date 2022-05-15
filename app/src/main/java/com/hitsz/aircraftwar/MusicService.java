@@ -10,8 +10,8 @@ import androidx.annotation.Nullable;
 
 public class MusicService extends Service {
     private static  final String TAG = "MusicService";
-    private String musicName;
-    private int times;
+    private final String musicName;
+    private final int times;
     public MusicService(String musicName, int times) {
         this.musicName = musicName;
         this.times = times;
@@ -42,23 +42,28 @@ public class MusicService extends Service {
     //播放音乐
     public void playMusic(){
         if(player == null){
-            if (musicName.equals("bgm")) {
-                player = MediaPlayer.create(this, R.raw.bgm);
-            }
-            else if (musicName.equals("bgm_boss")) {
-                player = MediaPlayer.create(this, R.raw.bgm);
-            }
-            else if (musicName.equals("bomb_explosion")) {
-                player = MediaPlayer.create(this, R.raw.bomb_explosion);
-            }
-            else if (musicName.equals("bullet_hit")) {
-                player = MediaPlayer.create(this, R.raw.bullet_hit);
-            }
-            else if (musicName.equals("game_over")) {
-                player = MediaPlayer.create(this, R.raw.game_over);
-            }
-            else {
-                player = MediaPlayer.create(this, R.raw.get_supply);
+            switch (musicName) {
+                case "bgm":
+                    player = MediaPlayer.create(this, R.raw.bgm);
+                    break;
+                case "bgm_boss":
+                    player = MediaPlayer.create(this, R.raw.bgm_boss);
+                    break;
+                case "bomb_explosion":
+                    player = MediaPlayer.create(this, R.raw.bomb_explosion);
+                    break;
+                case "bullet_hit":
+                    player = MediaPlayer.create(this, R.raw.bullet_hit);
+                    break;
+                case "game_over":
+                    player = MediaPlayer.create(this, R.raw.game_over);
+                    break;
+                case "get_supply":
+                    player = MediaPlayer.create(this, R.raw.get_supply);
+                    break;
+                default:
+                    player = null;
+                    break;
             }
         }
         reverseMusic();

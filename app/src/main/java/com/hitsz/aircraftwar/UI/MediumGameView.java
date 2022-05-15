@@ -1,16 +1,17 @@
-package edu.hitsz.application.Game;
+package com.hitsz.aircraftwar.UI;
 
-import edu.hitsz.aircraft.AbstractAircraft;
-import edu.hitsz.aircraft.Boss;
-import edu.hitsz.application.MusicThread;
-import edu.hitsz.factory.BossFactory;
-import edu.hitsz.factory.EliteFactory;
-import edu.hitsz.factory.MobFactory;
+import android.content.Context;
 
-public class MediumGame extends GameTemplate{
+import com.hitsz.aircraftwar.MusicService;
+import com.hitsz.aircraftwar.aircraft.AbstractAircraft;
+import com.hitsz.aircraftwar.aircraft.Boss;
+import com.hitsz.aircraftwar.factory.BossFactory;
+import com.hitsz.aircraftwar.factory.EliteFactory;
+import com.hitsz.aircraftwar.factory.MobFactory;
 
-    public MediumGame(boolean bgmStart) {
-        super(bgmStart);
+public class MediumGameView extends GameTemplateView{
+    public MediumGameView(Context context, boolean bgmStart) {
+        super(context, bgmStart);
     }
 
     @Override
@@ -35,8 +36,8 @@ public class MediumGame extends GameTemplate{
                 enemyFactory = new BossFactory();
                 enemyAircrafts.add(enemyFactory.creatEnemy(1000));
                 if (bgmStart) {
-                    bossBgmThread = new MusicThread("src/videos/bgm_boss.wav", 2);
-                    bossBgmThread.start();
+                    bossBgmThread = new MusicService("bgm_boss", 2);
+                    bossBgmThread.playMusic();
                 }
             }
         }

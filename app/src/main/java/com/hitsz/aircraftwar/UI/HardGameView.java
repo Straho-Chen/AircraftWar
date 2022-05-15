@@ -1,15 +1,17 @@
-package edu.hitsz.application.Game;
+package com.hitsz.aircraftwar.UI;
 
-import com.hitsz.aircraftwar.GameTemplate;
+import android.content.Context;
+
 import com.hitsz.aircraftwar.MusicService;
+import com.hitsz.aircraftwar.aircraft.AbstractAircraft;
+import com.hitsz.aircraftwar.aircraft.Boss;
 import com.hitsz.aircraftwar.factory.BossFactory;
 import com.hitsz.aircraftwar.factory.EliteFactory;
 import com.hitsz.aircraftwar.factory.MobFactory;
 
-public class HardGame extends GameTemplate {
-
-    public HardGame(boolean bgmStart) {
-        super(bgmStart);
+public class HardGameView extends GameTemplateView{
+    public HardGameView(Context context, boolean bgmStart) {
+        super(context, bgmStart);
     }
 
     @Override

@@ -1,11 +1,13 @@
-package edu.hitsz.application.Game;
+package com.hitsz.aircraftwar.UI;
 
-import com.hitsz.aircraftwar.GameTemplate;
+import android.content.Context;
 
-public class EasyGame extends GameTemplate {
+import com.hitsz.aircraftwar.factory.EliteFactory;
+import com.hitsz.aircraftwar.factory.MobFactory;
 
-    public EasyGame(boolean bgmStart) {
-        super(this, bgmStart);
+public class EasyGameView extends GameTemplateView{
+    public EasyGameView(Context context, boolean bgmStart) {
+        super(context, bgmStart);
     }
 
     @Override
